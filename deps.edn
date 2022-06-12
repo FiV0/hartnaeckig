@@ -1,7 +1,9 @@
 {:paths ["src" "resources"]
 
  :deps
- {org.clojure/clojure {:mvn/version "1.11.1"}}
+ {org.clojure/clojure          {:mvn/version "1.11.1"}
+  org.clojure/data.finger-tree {:mvn/version "0.0.3"}
+  com.dean/interval-tree       {:mvn/version "0.1.2"}}
 
  :aliases
  {:dev
