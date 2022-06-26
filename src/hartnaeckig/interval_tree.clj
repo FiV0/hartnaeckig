@@ -7,50 +7,11 @@
 
 (defrecord Key-Prio-Measure [key prio])
 
-
-(def empty-interval-tree (ft/finger-tree meter-kp))
-
-(def it (conj empty-interval-tree
-              [0 1]
-              [1 3]
-              [4 7]
-              [8 9]
-              [0 5]
-              [6 8]
-              [9 9]
-              [3 9]
-              [4 5]))
-
-(ft/measured it)
-
-(defn at-least [r {:keys [prio]}]
+(defn- at-least [r {:keys [prio]}]
   (<= r prio))
 
-(defn greater [r {:keys [key]}]
+(defn- greater [r {:keys [key]}]
   (< r key))
-
-(defn some-interval [it [l h]]
-  (let [[_ [low high :as x] _] (ft/split-tree it (partial at-least l))]
-    (if (and (at-least l (ft/measured it))
-             (<= low h))
-      x
-      nil)))
-
-(some-interval it [1 1])
-(some-interval it [2 2])
-(some-interval it [4 4])
-(some-interval it [9 9])
-
-(seq it)
-
-(ft/split-tree it (partial at-least 2))
-(ft/split-tree it (partial greater 0))
-(ft/split-tree it (complement (partial greater 2)))
-(ft/split-tree it (partial greater 2))
-
-(ft/measured it)
-
-(defrecord Len-Right-Meter [^int len right])
 
 (def ^:private notfound (Object.))
 
@@ -87,7 +48,7 @@
   (meta [_] mdata)
   (withMeta [_ mdata] (IntervalSet. cmpr tree mdata))
   Seqable
-                                        ; return 'tree' instead of 'this' so that result will be Sequential
+  ;; return 'tree' instead of 'this' so that result will be Sequential
   (seq [this] (when (seq tree) tree))
   IPersistentCollection
   (cons [this [low high :as value]]
@@ -117,6 +78,7 @@
   Measured
   (measured [_] (ft/measured tree))
   (getMeter [_] (ft/getMeter tree)) ; not needed?
+  #_#_#_ ;; todo
   SplitAt
   (ft-split-at [this n notfound]
     (cond
@@ -147,14 +109,21 @@
   (valAt [this k]
     (.valAt this k nil))
   IPersistentSet
-  (disjoin [this k]
+  (disjoin [this [low high :as i]]
     (if (empty? tree)
       this
-      (let [[l x r] (ft/split-tree tree #(>= 0 (cmpr k (:right %))))]
-        (if (= x k)
-          (IntervalSet. cmpr (ft/ft-concat l r) mdata)
-          this))))
+      (let [[left [low-x high-x :as x] right] (ft/split-tree tree (partial at-least low)#_#(>= 0 (cmpr l (:right %))))]
+        (cond
+          (= x i) ; found the exact match
+          (IntervalSet. cmpr (ft/ft-concat left right) mdata)
+          (and (at-least low (ft/measured tree)) (<= low-x high)) ; more searching in r needed
+          (let [[left-y y right-y] (ft/split-tree right (partial at-least (inc high)))]
+            (if (= y i)
+              (IntervalSet. cmpr (ft/ft-concat left (ft/ft-concat left-y right-y)) mdata)
+              this))
+          :else this))))
   (get [this k] (.valAt this k nil))
+  #_#_#_ ;; should this be added ?
   Indexed
   (nth [this n notfound] (if (< -1 n (:len (ft/measured tree)))
                            (second (ft/split-tree tree #(> (:len %) n)))
@@ -162,12 +131,13 @@
   (nth [this n] (if (< -1 n (:len (ft/measured tree)))
                   (second (ft/split-tree tree #(> (:len %) n)))
                   (throw (IndexOutOfBoundsException.))))
+  #_#_#_#_#_ ;; the interval tree is sorted, so this should be possible to implement
   Sorted
   (comparator [_] cmpr)
   (entryKey [_ x] x)
   (seq [this ascending?] (if ascending?  (.seq this) (rseq tree)))
   (seqFrom [_ k ascending?]
-    (let [[l x r] (ft/split-tree tree #(>= 0 (cmpr k (:right %))))]
+    (let [[l x r] (ft/split-tree tree #(>= 0 (cmpr k (:key %))))]
       (if ascending?
         (IntervalSet. cmpr (ft/conjl r x) mdata)
         (rseq (conj l x)))))
@@ -185,15 +155,6 @@
   (size [this] (count this))
   ;;toArray ... TBD
   )
-
-
-(def measure-kp (fn [[l h]] (Key-Prio-Measure. l h)))
-(def zero-kp (Key-Prio-Measure. nil Long/MIN_VALUE))
-(def meter-kp (ft/meter measure-kp
-                        zero-kp
-                        (fn [{key1 :key prio1 :prio} {key2 :key prio2 :prio}]
-                          (Key-Prio-Measure. (or key2 key1) (max prio1 prio2)))))
-
 
 (let [measure-kp (fn [[l h]] (Key-Prio-Measure. l h))
       zero-kp (Key-Prio-Measure. nil Long/MIN_VALUE)
@@ -217,6 +178,8 @@
                       [9 9]
                       [3 9]
                       [4 5]))
+
+(find is [1 2])
 
 (interval-set [0 1]
               [1 3]
