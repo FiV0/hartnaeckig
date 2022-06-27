@@ -95,16 +95,15 @@
   (valAt [_ [l h] notfound]
     (if (empty? tree)
       notfound
+      (let [[left _ _] (ft/split-tree tree (partial greater h))
+            [_ x right] (ft/split-tree left (partial at-least l))]
+        (println left x right)
+        (seq (ft/conjl right x)))
       ;; get one interval implementation
-      (let [[_ [low high :as x] _] (ft/split-tree tree (partial at-least l))]
-        (if (and (at-least l (ft/measured tree))
-                 (<= low h))
-          x
-          notfound))
-      ;; old ordered set implementation
-      #_(let [x (second (ft/split-tree tree #(>= 0 (cmpr k (:right %)))))]
-          (if (= x k)
-            k
+      #_(let [[_ [low high :as x] _] (ft/split-tree tree (partial at-least l))]
+          (if (and (at-least l (ft/measured tree))
+                   (<= low h))
+            x
             notfound))))
   (valAt [this k]
     (.valAt this k nil))
@@ -186,7 +185,10 @@
 
   (disj is [1 3])
 
-  (disj (interval-set [0 5] [0 2] [0 3] [0 1]) [0 1])
+  (get is [1 2])
+  (get is [4 9])
+
+  (disj (interval-set [0 5] [0 2] [0 3] [0 1]) [0 5])
 
   (interval-set [0 1]
                 [1 3]
