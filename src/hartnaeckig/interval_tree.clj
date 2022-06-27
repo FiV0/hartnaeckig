@@ -112,14 +112,17 @@
   (disjoin [this [low high :as i]]
     (if (empty? tree)
       this
-      (let [[left [low-x high-x :as x] right] (ft/split-tree tree (partial at-least low)#_#(>= 0 (cmpr l (:right %))))]
+      (let [[left [low-x high-x :as x] right] (ft/split-tree tree #(<= low (:key %)) #_#(>= 0 (cmpr l (:right %))))]
+        (println 1 x)
         (cond
           (= x i) ; found the exact match
           (IntervalSet. cmpr (ft/ft-concat left right) mdata)
-          (and (at-least low (ft/measured tree)) (<= low-x high)) ; more searching in r needed
-          (let [[left-y y right-y] (ft/split-tree right (partial at-least (inc high)))]
+          (let [measured (ft/measured right)]
+            (and (= low (:key measured)) (<= high (:prio measured)))) ; more searching in r needed
+          (let [[left-y y right-y] (ft/split-tree right (partial at-least high))]
+            (println 2 y)
             (if (= y i)
-              (IntervalSet. cmpr (ft/ft-concat left (ft/ft-concat left-y right-y)) mdata)
+              (IntervalSet. cmpr (ft/ft-concat (conj left x) (ft/ft-concat left-y right-y)) mdata)
               this))
           :else this))))
   (get [this k] (.valAt this k nil))
@@ -167,26 +170,32 @@
   (defn interval-set [& args]
     (into default-empty-interval-set args)))
 
+(prefer-method clojure.pprint/simple-dispatch clojure.lang.IPersistentSet clojure.lang.ISeq)
 
 
-(def is (interval-set [0 1]
-                      [1 3]
-                      [4 7]
-                      [8 9]
-                      [0 5]
-                      [6 8]
-                      [9 9]
-                      [3 9]
-                      [4 5]))
+(comment
+  (def is (interval-set [0 1]
+                        [1 3]
+                        [4 7]
+                        [8 9]
+                        [0 5]
+                        [6 8]
+                        [9 9]
+                        [3 9]
+                        [4 5]))
 
-(find is [1 2])
+  (disj is [1 3])
 
-(interval-set [0 1]
-              [1 3]
-              [4 7]
-              [8 9]
-              [0 5]
-              [6 8]
-              [9 9]
-              [3 9]
-              [4 5])
+  (disj (interval-set [0 5] [0 2] [0 3] [0 1]) [0 1])
+
+  (interval-set [0 1]
+                [1 3]
+                [4 7]
+                [8 9]
+                [0 5]
+                [6 8]
+                [9 9]
+                [3 9]
+                [4 5])
+
+  )
