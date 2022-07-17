@@ -32,6 +32,19 @@
                         (fn [{key1 :key prio1 :prio} {key2 :key prio2 :prio}]
                           (Key-Prio-Measure. (or key2 key1) (max prio1 prio2)))))
 
+
+(defn- split [p tree]
+  (if (p (ft/measured tree))
+    (let [[l x r] (ft/split-tree tree p)]
+      [l (ft/conjl r x)])
+    [tree nil]))
+
+(defn- take-until [p tree]
+  (first (split p tree)))
+
+(defn- drop-until [p tree]
+  (second (split p tree)))
+
 (deftype IntervalSet [cmpr tree mdata]
   Object
   (equals [_ x]
@@ -95,10 +108,15 @@
   (valAt [_ [l h] notfound]
     (if (empty? tree)
       notfound
-      (let [[left _ _] (ft/split-tree tree (partial greater h))
-            [_ x right] (ft/split-tree left (partial at-least l))]
-        (println left x right)
-        (seq (ft/conjl right x)))
+      (letfn [(matches [tree]
+                (let [new-tree (drop-until (partial at-least l) tree)]
+                  (println new-tree)
+                  (if-let [x (first new-tree)]
+                    (cons x (matches (rest new-tree)))
+                    nil)))]
+        ;; (println (take-until (partial greater h) tree))
+        (matches (take-until (partial greater h) tree)))
+
       ;; get one interval implementation
       #_(let [[_ [low high :as x] _] (ft/split-tree tree (partial at-least l))]
           (if (and (at-least l (ft/measured tree))
@@ -183,9 +201,14 @@
                         [3 9]
                         [4 5]))
 
+  (def is2 (interval-set [1 3] [3 9] [4 5] [4 7] [6 8] [8 9] [9 9]))
+
+
+
   (disj is [1 3])
 
   (get is [1 2])
+  (get is [1 3])
   (get is [4 9])
 
   (disj (interval-set [0 5] [0 2] [0 3] [0 1]) [0 5])
