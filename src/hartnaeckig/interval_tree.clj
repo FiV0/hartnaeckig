@@ -7,15 +7,15 @@
 
 (defrecord Key-Prio-Measure [key prio])
 
-(defn- at-least [r {:keys [prio]}]
+(defn at-least [r {:keys [prio]}]
   (<= r prio))
 
-(defn- greater [r {:keys [key]}]
+(defn greater [r {:keys [key]}]
   (< r key))
 
 (def ^:private notfound (Object.))
 
-(defn- seq-equals [a b]
+(defn seq-equals [a b]
   (boolean
    (when (or (sequential? b) (instance? java.util.List b))
      (loop [a (seq a), b (seq b)]
@@ -33,16 +33,16 @@
                           (Key-Prio-Measure. (or key2 key1) (max prio1 prio2)))))
 
 
-(defn- split [p tree]
+(defn split [p tree]
   (if (p (ft/measured tree))
     (let [[l x r] (ft/split-tree tree p)]
       [l (ft/conjl r x)])
     [tree nil]))
 
-(defn- take-until [p tree]
+(defn take-until [p tree]
   (first (split p tree)))
 
-(defn- drop-until [p tree]
+(defn drop-until [p tree]
   (second (split p tree)))
 
 (deftype IntervalSet [cmpr tree mdata]
@@ -110,11 +110,9 @@
       notfound
       (letfn [(matches [tree]
                 (let [new-tree (drop-until (partial at-least l) tree)]
-                  (println new-tree)
                   (if-let [x (first new-tree)]
                     (cons x (matches (rest new-tree)))
                     nil)))]
-        ;; (println (take-until (partial greater h) tree))
         (matches (take-until (partial greater h) tree)))
 
       ;; get one interval implementation
@@ -129,17 +127,14 @@
   (disjoin [this [low high :as i]]
     (if (empty? tree)
       this
-      (let [[l [low-x high-x :as x] r] (ft/split-tree tree #(>= 0 (cmpr low (:key %))))
-            compared (cmpr low low-x)]
-        (if (zero? compared)
-          (let [compared2 (cmpr high high-x)]
-            (if (zero? compared2)
-              (IntervalSet. cmpr (ft/ft-concat l r) mdata)
-              (let [[l2 [_ high-x] r2] (ft/split-tree r (partial at-least high))]
-                (if (and high-x (zero? (cmpr high high-x)))
-                  (IntervalSet. cmpr (ft/ft-concat (conj l x) (ft/ft-concat l2 r2)) mdata)
-                  this))
-              ))
+      (let [[l [low-x high-x :as x] r] (ft/split-tree tree #(>= 0 (cmpr low (:key %))))]
+        (if (zero? (cmpr low low-x))
+          (if (zero? (cmpr high high-x))
+            (IntervalSet. cmpr (ft/ft-concat l r) mdata)
+            (let [[l2 [_ high-x] r2] (ft/split-tree r (partial at-least high))]
+              (if (and high-x (zero? (cmpr high high-x)))
+                (IntervalSet. cmpr (ft/ft-concat (conj l x) (ft/ft-concat l2 r2)) mdata)
+                this)))
           this))))
   (get [this k] (.valAt this k nil))
   #_#_#_ ;; should this be added ?
