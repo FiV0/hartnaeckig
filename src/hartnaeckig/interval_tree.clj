@@ -129,19 +129,18 @@
   (disjoin [this [low high :as i]]
     (if (empty? tree)
       this
-      (let [[left [low-x high-x :as x] right] (ft/split-tree tree #(<= low (:key %)) #_#(>= 0 (cmpr l (:right %))))]
-        (println 1 x)
-        (cond
-          (= x i) ; found the exact match
-          (IntervalSet. cmpr (ft/ft-concat left right) mdata)
-          (let [measured (ft/measured right)]
-            (and (= low (:key measured)) (<= high (:prio measured)))) ; more searching in r needed
-          (let [[left-y y right-y] (ft/split-tree right (partial at-least high))]
-            (println 2 y)
-            (if (= y i)
-              (IntervalSet. cmpr (ft/ft-concat (conj left x) (ft/ft-concat left-y right-y)) mdata)
-              this))
-          :else this))))
+      (let [[l [low-x high-x :as x] r] (ft/split-tree tree #(>= 0 (cmpr low (:key %))))
+            compared (cmpr low low-x)]
+        (if (zero? compared)
+          (let [compared2 (cmpr high high-x)]
+            (if (zero? compared2)
+              (IntervalSet. cmpr (ft/ft-concat l r) mdata)
+              (let [[l2 [_ high-x] r2] (ft/split-tree r (partial at-least high))]
+                (if (and high-x (zero? (cmpr high high-x)))
+                  (IntervalSet. cmpr (ft/ft-concat (conj l x) (ft/ft-concat l2 r2)) mdata)
+                  this))
+              ))
+          this))))
   (get [this k] (.valAt this k nil))
   #_#_#_ ;; should this be added ?
   Indexed
@@ -206,6 +205,8 @@
 
 
   (disj is [1 3])
+  (disj is [4 5])
+  (disj is [10 10])
 
   (get is [1 2])
   (get is [1 3])
