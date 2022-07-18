@@ -9,15 +9,9 @@
 
 (def ^:private notfound (Object.))
 
-(def java-map (doto (java.util.HashMap.)
-                (.put 1 2)
-                (.put 3 4)))
-
 (defn- check-entry [m [k v]]
   (and (contains? m k)
        (= v (get m k))))
-
-
 
 (deftype IntervalMap [cmpr tree mdata]
   Object
@@ -38,20 +32,8 @@
   ;; return 'tree' instead of 'this' so that result will be Sequential
   (seq [this] (when (seq tree) #_(seq tree) (map (fn [[k v]] (clojure.lang.MapEntry. k v)) (seq tree))))
   IPersistentCollection
-  (cons [this o #_[[low high :as k] v :as entry]]
-    (.assoc this (nth o 0) (nth o 1))
-    #_(if (empty? tree)
-        (IntervalMap. cmpr (conj tree entry) mdata)
-        (let [[l [[low-x high-x] :as x] r] (ft/split-tree tree #(>= 0 (cmpr low (:key %))))
-              compared (cmpr low low-x)]
-          (if (zero? compared)
-            (let [compared2 (cmpr high high-x)]
-              (if (zero? compared2)
-                this ;; already in set
-                (let [[a b] (if (>= 0 compared2) [entry x] [x entry])]
-                  (IntervalMap. cmpr (ft/ft-concat (conj l a) (ft/conjl r b)) mdata))))
-            (let [[a b] (if (>= 0 compared) [entry x] [x entry])]
-              (IntervalMap. cmpr (ft/ft-concat (conj l a) (ft/conjl r b)) mdata))))))
+  (cons [this o]
+    (.assoc this (nth o 0) (nth o 1)))
   (empty [_] (IntervalMap. cmpr (empty tree) mdata))
   (equiv [this x] (.equals this x)) ; TBD
   ISeq
@@ -98,16 +80,18 @@
                 false)))
           false))))
 
-  (entryAt [this [l h]]
+  (entryAt [this [low high :as k]]
     (if (empty? tree)
-      notfound
-      (letfn [(matches [tree]
-                (let [new-tree (it/drop-until (partial it/at-least l) tree)]
-                  (println new-tree)
-                  (if-let [x (first new-tree)]
-                    (cons x (matches (rest new-tree)))
-                    nil)))]
-        (matches (it/take-until (partial it/greater h) tree)))))
+      nil
+      (let [[_ [[low-x high-x] v] r] (ft/split-tree tree #(>= 0 (cmpr low (:key %))))]
+        (if (zero? (cmpr low low-x))
+          (if (zero? (cmpr high high-x))
+            (clojure.lang.MapEntry/create k v)
+            (let [[_ [[_ high-x] v] _] (ft/split-tree r (partial it/at-least high))]
+              (if (and high-x (zero? (cmpr high high-x)))
+                (clojure.lang.MapEntry/create k v)
+                nil)))
+          nil))))
 
   (assoc [this [low high :as k] v]
     (let [entry [k v]]
@@ -118,7 +102,7 @@
           (if (zero? compared)
             (let [compared2 (cmpr high high-x)]
               (if (zero? compared2)
-                this ;; already in set
+                (IntervalMap. cmpr (ft/ft-concat (conj l [k v]) r) mdata)
                 (let [[a b] (if (>= 0 compared2) [entry x] [x entry])]
                   (IntervalMap. cmpr (ft/ft-concat (conj l a) (ft/conjl r b)) mdata))))
             (let [[a b] (if (>= 0 compared) [entry x] [x entry])]
@@ -208,6 +192,7 @@
   (get is [4 9])
 
   (assoc is [-2 15] 111)
+  (assoc is [0 1] 111)
   (dissoc  (assoc is [-2 15] 111) [-2 15])
 
   (meta (dissoc  (assoc is [-2 15] 111) [-2 15]))
@@ -215,4 +200,5 @@
 
   (assoc (empty (meta (with-meta (dissoc  (assoc is [-2 15] 111) [-2 15]) {:a 1})))
          [1 2] 'foo)
-  )
+
+  (find is [0 1]))
