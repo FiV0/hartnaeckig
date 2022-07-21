@@ -40,9 +40,9 @@
     (is (= {:foo :bar} (meta s1)))
     (is (= nil (meta s2)))))
 
-#_(deftest fn-set-test
-    (is (= [1 2] ((interval-set/interval-set [1 2]) [1 2])))
-    (is (= nil ((interval-set/interval-set [1 2]) [1 3]))))
+(deftest fn-set-test
+  (is (= '([0 1] [0 5] [1 3]) ((apply interval-set/interval-set interval-data) [1 2])))
+  (is (= nil ((apply interval-set/interval-set interval-data) [-10 -1]))))
 
 #_(deftest nth-test)
 

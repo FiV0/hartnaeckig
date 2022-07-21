@@ -131,7 +131,19 @@
         (hasNext [_] (boolean (first @t))))))
   (size [this] (count this))
   ;;toArray ... TBD
-  )
+
+  clojure.lang.IFn
+  (invoke [this k not-found]
+    (.valAt this k not-found))
+  (invoke [this k]
+    (.valAt this k))
+  (applyTo [this args]
+    (let [n (clojure.lang.RT/boundedLength args 2)]
+      (case n
+        0 (throw (clojure.lang.ArityException. n (.. this (getClass) (getSimpleName))))
+        1 (.invoke this (first args))
+        2 (.invoke this (first args) (second args))
+        3 (throw (clojure.lang.ArityException. n (.. this (getClass) (getSimpleName))))))))
 
 (let [measure-kp (fn [[l h]] (Key-Prio-Measure. l h))
       zero-kp (Key-Prio-Measure. nil Long/MIN_VALUE)
@@ -170,6 +182,8 @@
   (get is [1 3])
   (get is [4 9])
 
+  (is [1 2])
+  (is [-1 -1])
   (disj (interval-set [0 5] [0 2] [0 3] [0 1]) [0 5])
 
   (interval-set [0 1]
