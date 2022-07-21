@@ -15,7 +15,7 @@
 
 (defn seq-equals [a b]
   (boolean
-   (when (or (sequential? b) (instance? java.util.List b))
+   (when (or (seq? b) (instance? java.util.List b))
      (loop [a (seq a), b (seq b)]
        (when (= (nil? a) (nil? b))
          (or

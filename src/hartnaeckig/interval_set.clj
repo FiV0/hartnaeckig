@@ -9,14 +9,13 @@
 
 (def ^:private notfound (Object.))
 
+;; TODO try to fix printing of sets
+;; TODO add assertion if input data is not a pair
+
 (deftype IntervalSet [cmpr tree mdata]
   Object
-  (equals [_ x]
-    (boolean
-     (if (instance? java.util.Set x)
-       (and (= (count x) (count tree))
-            (every? #(contains? x %) tree))
-       (it/seq-equals tree x))))
+  (equals [this x]
+    (or (identical? this x) (and (instance? IntervalSet x) (it/seq-equals tree x))))
   (hashCode [_] (reduce + (map ft/hashcode tree)))
   IHashEq
   (hasheq [this]
