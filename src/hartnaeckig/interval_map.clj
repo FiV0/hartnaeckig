@@ -126,7 +126,7 @@
       (letfn [(matches [tree]
                 (let [new-tree (it/drop-until (partial it/at-least l) tree)]
                   (if-let [x (first new-tree)]
-                    (cons x (matches (rest new-tree)))
+                    (cons (second x) (matches (rest new-tree)))
                     nil)))]
         (matches (it/take-until (partial it/greater h) tree)))))
   (valAt [this k]
