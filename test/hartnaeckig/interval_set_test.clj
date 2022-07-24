@@ -42,7 +42,7 @@
 
 (deftest fn-set-test
   (is (= '([0 1] [0 5] [1 3]) ((apply interval-set/interval-set interval-data) [1 2])))
-  (is (= nil ((apply interval-set/interval-set interval-data) [-10 -1]))))
+  (is (= [] ((apply interval-set/interval-set interval-data) [-10 -1]))))
 
 #_(deftest nth-test)
 

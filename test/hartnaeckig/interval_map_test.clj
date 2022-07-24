@@ -40,6 +40,11 @@
     (is (= {:foo :bar} (meta s1)))
     (is (= nil (meta s2)))))
 
+(deftest fn-set-test
+  (is (= '(1 2 3) ((apply interval-map/interval-map interval-data) [1 2])))
+  (is (= [] ((apply interval-map/interval-map interval-data) [-10 -1]))))
+
+
 #_(deftest nth-test)
 
 (deftest get-test

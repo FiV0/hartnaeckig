@@ -72,10 +72,11 @@
     (if (empty? tree)
       notfound
       (letfn [(matches [tree]
-                (let [new-tree (it/drop-until (partial it/at-least l) tree)]
-                  (if-let [x (first new-tree)]
-                    (cons x (matches (rest new-tree)))
-                    nil)))]
+                (loop [tree tree res []]
+                  (let [new-tree (it/drop-until (partial it/at-least l) tree)]
+                    (if-let [x (first new-tree)]
+                      (recur (rest new-tree) (conj res x))
+                      res))))]
         (matches (it/take-until (partial it/greater h) tree)))
 
       ;; get one interval implementation

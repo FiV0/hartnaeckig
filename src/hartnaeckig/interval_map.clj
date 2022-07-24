@@ -124,10 +124,11 @@
     (if (empty? tree)
       notfound
       (letfn [(matches [tree]
-                (let [new-tree (it/drop-until (partial it/at-least l) tree)]
-                  (if-let [x (first new-tree)]
-                    (cons (second x) (matches (rest new-tree)))
-                    nil)))]
+                (loop [tree tree res []]
+                  (let [new-tree (it/drop-until (partial it/at-least l) tree)]
+                    (if-let [x (first new-tree)]
+                      (recur (rest new-tree) (conj res (second x)))
+                      res))))]
         (matches (it/take-until (partial it/greater h) tree)))))
   (valAt [this k]
     (.valAt this k nil))
