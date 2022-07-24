@@ -109,7 +109,7 @@
   (without [this [low high :as k]]
     (if (empty? tree)
       this
-      (let [[l [[low-x high-x :as x]] r] (ft/split-tree tree #(>= 0 (cmpr low (:key %))))]
+      (let [[l [[low-x high-x] :as x] r] (ft/split-tree tree #(>= 0 (cmpr low (:key %))))]
         (if (zero? (cmpr low low-x))
           (if (zero? (cmpr high high-x))
             (IntervalMap. cmpr (ft/ft-concat l r) mdata)
