@@ -14,11 +14,7 @@
 (deftest dissoc-test
   (let [i-map (apply interval-map/interval-map interval-data)]
     (doseq [[i _ :as kv] interval-data]
-      ;; (println i)
       (is (= (seq (remove #{kv} interval-data)) (seq (dissoc i-map i)))))))
-
-(comment
-  (dissoc-test))
 
 (deftest assoc-test
   (doseq [[k v :as kv] interval-data]
@@ -48,7 +44,7 @@
 
 (deftest get-test
   (is (= '(1 2 3 4 5 6) (seq (get (apply interval-map/interval-map interval-data) [0 5]))))
-  (is (= '(2 3 4 5) (seq (get (apply interval-map/interval-map interval-data) [4 4]))))
+  (is (= '(2 4 5 6) (seq (get (apply interval-map/interval-map interval-data) [4 4]))))
   (is (= nil (seq (get (apply interval-map/interval-map interval-data) [-100 -1]))))
   (is (= nil (seq (get (apply interval-map/interval-map interval-data) [10 100])))))
 
