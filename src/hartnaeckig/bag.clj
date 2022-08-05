@@ -58,7 +58,17 @@
 
   (contains [this key] (some? (get content key)))
 
-  (get [this key] (get content key)))
+  (get [this key] (get content key))
+
+  clojure.lang.IFn
+  (invoke [this k]
+    (get this k))
+
+  (applyTo [this args]
+    (let [n (clojure.lang.RT/boundedLength args 2)]
+      (if (= 1 n)
+        (.invoke this (first args))
+        (throw (clojure.lang.ArityException. n (.. this (getClass) (getSimpleName))))))))
 
 (defn bag [] (Bag. 0 {}))
 
@@ -67,4 +77,5 @@
   (count b)
   (get b "foo")
   (contains? b "foo")
-  (seq b))
+  (seq b)
+  (b "foo"))
