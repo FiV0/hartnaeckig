@@ -73,9 +73,38 @@
 (defn bag [] (Bag. 0 {}))
 
 (comment
-  (def b (-> (bag) (conj "foo") (conj "foo") #_(disj "foo") (conj "bar")))
+  (def b (-> (bag) (conj "foo") (conj "foo") (disj "foo") (conj "bar")))
+  (b "foo") ;; => 2
   (count b)
   (get b "foo")
   (contains? b "foo")
-  (seq b)
-  (b "foo"))
+  (seq b))
+
+
+(defmethod print-method Bag [bag ^java.io.Writer w]
+  (.write w "#Bag{")
+  (doseq [kv (seq bag)]
+    (.write w (pr-str kv)))
+  (.write w "}"))
+
+(pr-str b)
+;; => "#Bag{[\"foo\" 1][\"bar\" 1]}"
+
+(defrecord WrappedDS [current history])
+
+(defn apply-op [{:keys [current] :as wrapped-ds} fn & args]
+  (let [new-ds (apply fn current args)]
+    (-> wrapped-ds
+        (update :history conj new-ds)
+        (assoc :current new-ds))))
+
+(defn wrap [ds]
+  (->WrappedDS ds [ds]))
+
+(-> (wrap (bag))
+    (apply-op conj "foo")
+    (apply-op conj "foo")
+    (apply-op disj "foo")
+    (apply-op conj "bar")
+    :history)
+;; => [#{} #{["foo" 1]} #{["foo" 2]} #{["foo" 1]} #{["foo" 1] ["bar" 1]}]
